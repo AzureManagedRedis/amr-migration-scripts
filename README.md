@@ -26,7 +26,7 @@ The script supports four actions that map to the migration lifecycle:
 | Action | Description |
 | ------ | ----------- |
 | `Validate` | Checks whether the source and target caches are compatible for migration and reports any disparities |
-| `Migrate` | Initiates the migration (DNS switchover; data migration is skipped by default) |
+| `Migrate` | Initiates the migration (DNS switchover; cache data is migrated only when `-MigrateData` is set) |
 | `Status` | Retrieves the current state of an in-progress or completed migration |
 | `Cancel` | Cancels an in-progress migration |
 
@@ -38,6 +38,7 @@ The script supports four actions that map to the migration lifecycle:
 | `-TargetResourceId` | Yes | — | Full ARM resource ID of the target Azure Managed Redis cluster |
 | `-SourceResourceId` | For `Validate` / `Migrate` | — | Full ARM resource ID of the source Azure Cache for Redis instance |
 | `-ForceMigrate` | No | `$false` | When `$true`, proceeds with migration even if parity validation returns warnings |
+| `-MigrateData` | No | `$false` | When set, includes cache data in the migration. Use the same setting for `Validate` and `Migrate` |
 | `-TrackMigration` | No | `$false` | When set, blocks until the long-running operation completes |
 | `-Environment` | No | `AzureCloud` | Azure environment. Allowed values: `AzureCloud`, `AzureChinaCloud`, `AzureUSGovernment`, `AzureGermanCloud` |
 | `-Help` | No | `$false` | Displays full help for the script |

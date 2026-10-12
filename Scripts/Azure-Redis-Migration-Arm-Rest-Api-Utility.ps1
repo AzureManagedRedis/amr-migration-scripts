@@ -12,6 +12,8 @@
 .PARAMETER ForceMigrate
     If set to $true, migration proceeds even when source/target cache parity validation returns warnings.
     If set to $false (default), migration is blocked when validation returns any warning.
+.PARAMETER MigrateData
+    If set, includes cache data in the migration. By default, cache data is not migrated.
 .PARAMETER Environment
     The Azure environment to use (default is the public "AzureCloud").
     Some possible values: "AzureCloud", "AzureChinaCloud", "AzureUSGovernment", "AzureGermanCloud".
@@ -28,6 +30,8 @@
     Initiates a migration and forces migration when parity validation returns warnings.
     .\Azure-Redis-Migration-Arm-Rest-Api-Utility.ps1 -Action Validate -SourceResourceId "/subscriptions/xxxxx/resourceGroups/rg1/providers/Microsoft.Cache/Redis/redis1" -TargetResourceId "/subscriptions/xxxxx/resourceGroups/rg1/providers/Microsoft.Cache/redisEnterprise/amr1"
     Validates whether a migration can be performed between the source and target caches.
+    .\Azure-Redis-Migration-Arm-Rest-Api-Utility.ps1 -Action Validate -SourceResourceId "/subscriptions/xxxxx/resourceGroups/rg1/providers/Microsoft.Cache/Redis/redis1" -TargetResourceId "/subscriptions/xxxxx/resourceGroups/rg1/providers/Microsoft.Cache/redisEnterprise/amr1" -MigrateData
+    Validates a migration that includes cache data. Pass -MigrateData to the subsequent Migrate action as well.
     .\Azure-Redis-Migration-Arm-Rest-Api-Utility.ps1 -Action Status -TargetResourceId "/subscriptions/xxxxx/resourceGroups/rg1/providers/Microsoft.Cache/redisEnterprise/amr1"
     Checks the status of the migration.
     .\Azure-Redis-Migration-Arm-Rest-Api-Utility.ps1 -Action Cancel -TargetResourceId "/subscriptions/xxxxx/resourceGroups/rg1/providers/Microsoft.Cache/redisEnterprise/amr1"
@@ -51,6 +55,9 @@ param
 
     [Parameter()]
     [bool] $ForceMigrate = $false,
+
+    [Parameter()]
+    [switch] $MigrateData = $false,
 
     [Parameter()]
     [string] $Environment = "AzureCloud",
@@ -168,9 +175,12 @@ switch ($Action)
                 cacheResourceType = "AzureCacheForRedis";
                 forceMigrate      = $ForceMigrate;
                 switchDns         = $true;
-                skipDataMigration = $true;
+                skipDataMigration = -not $MigrateData.IsPresent;
             };
         } | ConvertTo-Json -Depth 3
+
+        $dataMigrationMode = if ($MigrateData.IsPresent) { "enabled" } else { "disabled" }
+        Write-Host "Data migration: $dataMigrationMode"
 
         if ($TrackMigration.IsPresent)
         {
@@ -234,10 +244,12 @@ switch ($Action)
         $payload = @{
             properties = @{
                 sourceResourceId  = $SourceResourceId;
-                skipDataMigration = $true;
+                skipDataMigration = -not $MigrateData.IsPresent;
             };
         } | ConvertTo-Json -Depth 3
 
+        $dataMigrationMode = if ($MigrateData.IsPresent) { "enabled" } else { "disabled" }
+        Write-Host "Data migration: $dataMigrationMode"
         Write-Host "This command will validate whether a migration can be performed between the source and target caches."
         $response = Invoke-AzRestMethod `
             -Method POST `
